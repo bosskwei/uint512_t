@@ -6,7 +6,7 @@ if [[ $1 ]]; then
     rm -rf *
 fi
 
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Debug ..
 make -j4
 
 if [[ $? != 0 ]]; then

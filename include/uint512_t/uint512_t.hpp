@@ -43,16 +43,73 @@ std::vector<std::string> split(const std::string &s, const std::string &sep) {
 } // namespace
 
 
-class uint128_t {
+template <typename T, typename Base>
+class ext_base {
+public:
+  ext_base() = delete;
+  explicit ext_base(Base hi, Base lo) : hi_(hi), lo_(lo) {}
+
+  T &operator=(const T &other) {
+    this->hi_ = other.hi_;
+    this->lo_ = other.lo_;
+    return *this;
+  }
+
+  friend bool operator==(const T &left, const T &right) {
+    return left.hi_ == right.hi_ and left.lo_ == right.lo_;
+  }
+
+  friend bool operator!=(const T &left, const T &right) {
+    return not (left == right);
+  }
+
+  friend bool operator>(const T &left, const T &right) {
+    if (left.hi_ > right.hi_) {
+      return true;
+    } else if (left.hi_ < right.hi_) {
+      return false;
+    } else {
+      return left.lo_ > right.lo_;
+    }
+  }
+
+  friend bool operator>=(const T &left, const T &right) {
+    return (left > right) or (left == right);
+  }
+
+  friend bool operator<(const T &left, const T &right) {
+    if (left.hi_ > right.hi_) {
+      return false;
+    } else if (left.hi_ < right.hi_) {
+      return true;
+    } else {
+      return left.lo_ < right.lo_;
+    }
+  }
+
+  friend bool operator<=(const T &left, const T &right) {
+    return (left < right) or (left == right);
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, const T &object) {
+    return os << object.toString();
+  }
+
+protected:
+  Base hi_, lo_;
+};
+
+
+class uint128_t : public ext_base<uint128_t, uint64_t> {
   const size_t BYTES_UINT64 = 64 / 8;
   const size_t BYTES_UINT128 = 128 / 8;
   const uint64_t MAX_UINT64 = 0xFFFFFFFFFFFFFFFF;
 
 public:
-  uint128_t() : hi_(0), lo_(0) {}
-  uint128_t(uint64_t value) : hi_(0), lo_(value) {}
-  uint128_t(uint64_t hi, uint64_t lo) : hi_(hi), lo_(lo) {}
-  explicit uint128_t(std::string value) : hi_(0), lo_(0) {
+  uint128_t() : ext_base(0, 0) {}
+  uint128_t(uint64_t value) : ext_base(0, value) {}
+  uint128_t(uint64_t hi, uint64_t lo) : ext_base(hi, lo) {}
+  explicit uint128_t(std::string value) : ext_base(0, 0) {
     bool isHex = false, isPositive = true;
 
     // 0xFFFF_FFFF
@@ -191,12 +248,6 @@ public:
     return hex;
   }
 
-  uint128_t &operator=(const uint128_t &other) {
-    this->hi_ = other.hi_;
-    this->lo_ = other.lo_;
-    return *this;
-  }
-
   uint128_t &operator+=(const uint128_t &other) {
     asm("add %2, %0   \n\t"
         "adc %3, %1   \n\t"
@@ -210,59 +261,12 @@ public:
     uint128_t complement(MAX_UINT64 - other.hi_, MAX_UINT64 - other.lo_ + 1);
     return this->operator+=(complement);
   }
-
-  friend bool operator==(const uint128_t &left, const uint128_t &right) {
-    return left.hi_ == right.hi_ and left.lo_ == right.lo_;
-  }
-
-  friend bool operator!=(const uint128_t &left, const uint128_t &right) {
-    return not (left == right);
-  }
-
-  friend bool operator>(const uint128_t &left, const uint128_t &right) {
-    if (left.hi_ > right.hi_) {
-      return true;
-    } else if (left.hi_ < right.hi_) {
-      return false;
-    } else {
-      return left.lo_ > right.lo_;
-    }
-  }
-
-  friend bool operator>=(const uint128_t &left, const uint128_t &right) {
-    return (left > right) or (left == right);
-  }
-
-  friend bool operator<(const uint128_t &left, const uint128_t &right) {
-    if (left.hi_ > right.hi_) {
-      return false;
-    } else if (left.hi_ < right.hi_) {
-      return true;
-    } else {
-      return left.lo_ < right.lo_;
-    }
-  }
-
-  friend bool operator<=(const uint128_t &left, const uint128_t &right) {
-    return (left < right) or (left == right);
-  }
-
-  friend std::ostream &operator<<(std::ostream &os, const uint128_t &object) {
-    return os << object.toString();
-  }
-
-private:
-  uint64_t hi_, lo_;
 };
 
-class uint256_t {
-private:
-  uint128_t hi_, lo_;
+class uint256_t : public ext_base<uint256_t, uint128_t> {
 };
 
 class uint512_t {
-private:
-  uint256_t hi_, lo_;
 };
 
 #endif
