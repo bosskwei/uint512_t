@@ -1,5 +1,5 @@
-#ifndef UINT128_T_H
-#define UINT128_T_H
+#ifndef UINT512_T_H
+#define UINT512_T_H
 
 #include <array>
 #include <regex>
@@ -10,7 +10,6 @@
 #include <iostream>
 #include <cinttypes>
 #include <algorithm>
-
 
 namespace {
 template <typename... Args>
@@ -43,18 +42,17 @@ std::vector<std::string> split(const std::string &s, const std::string &sep) {
 }
 } // namespace
 
-class uint512_t {
-  static const size_t SIZE_DATA = 8;
-  const uint64_t MAX_UINT64 = 0xFFFFFFFFFFFFFFFF;
+
+class uint128_t {
   const size_t BYTES_UINT64 = 64 / 8;
-  const size_t BYTES_UINT512 = 512 / 8;
-  const size_t HEXLEN_UINT64 = 64 / 4;
-  const size_t HEXLEN_UINT512 = 512 / 4;
+  const size_t BYTES_UINT128 = 128 / 8;
+  const uint64_t MAX_UINT64 = 0xFFFFFFFFFFFFFFFF;
 
 public:
-  uint512_t() : data_{0, 0, 0, 0, 0, 0, 0, 0} {}
-  uint512_t(const uint64_t &value) : data_{value, 0, 0, 0, 0, 0, 0, 0} {}
-  explicit uint512_t(std::string value) : data_{0, 0, 0, 0, 0, 0, 0, 0} {
+  uint128_t() : hi_(0), lo_(0) {}
+  uint128_t(uint64_t value) : hi_(0), lo_(value) {}
+  uint128_t(uint64_t hi, uint64_t lo) : hi_(hi), lo_(lo) {}
+  explicit uint128_t(std::string value) : hi_(0), lo_(0) {
     bool isHex = false, isPositive = true;
 
     // 0xFFFF_FFFF
@@ -100,8 +98,8 @@ public:
       }
     });
 
-    // parse string to hex list
-    std::vector<uint32_t> hexList;
+    // parse string to hex list like [1, 255, 200]
+    std::vector<uint32_t> byteList;
     if (isHex) {
       std::reverse(value.begin(), value.end());
 
@@ -115,62 +113,63 @@ public:
         uint8_t ch_0 = value[i], ch_1 = value[i + 1];
         ch_0 = (ch_0 >= 'A') ? (10 + ch_0 - 'A') : (ch_0 - '0');
         ch_1 = (ch_1 >= 'A') ? (10 + ch_1 - 'A') : (ch_1 - '0');
-        hexList.push_back(16 * ch_1 + ch_0);
+        byteList.push_back(16 * ch_1 + ch_0);
       }
     } else {
-      hexList.push_back(0);
+      byteList.push_back(0);
 
       for (const auto &ch_x : value) {
-        for (auto &hex_x : hexList) {
+        for (auto &hex_x : byteList) {
           hex_x *= 10;
         }
 
         uint8_t dec_x = ch_x - '0';
-        hexList[0] += dec_x;
+        byteList[0] += dec_x;
 
-        for (size_t i = 0; i < hexList.size(); i += 1) {
-          if (hexList[i] >= 256) {
-            hexList.push_back(0);
-            hexList[i + 1] += hexList[i] / 256;
-            hexList[i] = hexList[i] % 256;
+        for (size_t i = 0; i < byteList.size(); i += 1) {
+          if (byteList[i] >= 256) {
+            byteList.push_back(0);
+            byteList[i + 1] += byteList[i] / 256;
+            byteList[i] = byteList[i] % 256;
           }
         }
       }
 
-      while (hexList[hexList.size() - 1] == 0) {
-        hexList.pop_back();
+      while (byteList[byteList.size() - 1] == 0) {
+        byteList.pop_back();
       }
     }
 
-    // hexList now contains reverse-ordered byte value
-    if (hexList.size() > HEXLEN_UINT512) {
+    // byteList now contains reverse-ordered byte value
+    if (byteList.size() > BYTES_UINT128) {
       throw std::runtime_error("value too much");
     }
 
-    while (hexList.size() < HEXLEN_UINT512) {
-      hexList.push_back(0);
+    while (byteList.size() < BYTES_UINT128) {
+      byteList.push_back(0);
     }
 
     // fill data by hex list
-    for (size_t i = 0, mul = 1; i < HEXLEN_UINT512; i += 1) {
-      if (i % SIZE_DATA == 0) {
+    for (size_t i = 0, mul = 1; i < BYTES_UINT128; i += 1) {
+      if (i % BYTES_UINT64 == 0) {
         mul = 1;
       } else {
         mul *= 256;
       }
       size_t id = i / BYTES_UINT64;
-      this->data_[id] += mul * hexList[i];
+      if (id == 0) {
+        this->lo_ += mul * byteList[i];
+      } else if (id == 1) {
+        this->hi_ += mul * byteList[i];
+      } else {
+        throw std::runtime_error("should not come here");
+      }
     }
 
     // negative value as complement
     if (not isPositive) {
-      for (size_t i = 0; i < SIZE_DATA; i += 1) {
-        if (i) {
-          this->data_[i] = MAX_UINT64 - this->data_[i];
-        } else { // i ==0, lowest bits
-          this->data_[i] = MAX_UINT64 - this->data_[i] + 1;
-        }
-      }
+      this->hi_ = MAX_UINT64 - this->hi_;
+      this->lo_ = MAX_UINT64 - this->lo_ + 1;
     }
   }
 
@@ -178,16 +177,13 @@ public:
     std::string hex;
 
     // build form A_B_C
-    for (size_t i = 0; i < SIZE_DATA; i+= 1) {
-      hex = stringFormat("%016" PRIX64 "_", this->data_[i]) + hex;
-    }
-    hex = hex.substr(0, hex.size() - 1);
+    hex = stringFormat("%016" PRIX64 "%016" PRIX64 "", this->hi_, this->lo_);
 
     // remove duplicate "0"
     size_t fnz = 0;
     for(size_t i = 0; i < hex.size(); i += 1) {
+      fnz = i;
       if (hex[i] != '0' and hex[i] != '_') {
-        fnz = i;
         break;
       }
     }
@@ -195,93 +191,78 @@ public:
     return hex;
   }
 
-  uint512_t &operator=(const uint512_t &other) {
-    for (size_t i = 0; i < SIZE_DATA; i += 1) {
-      this->data_[i] = other.data_[i];
-    }
+  uint128_t &operator=(const uint128_t &other) {
+    this->hi_ = other.hi_;
+    this->lo_ = other.lo_;
     return *this;
   }
 
-  uint512_t &operator+=(const uint512_t &other) {
-    asm("add %8, %0   \n\t"
-        "adc %9, %1   \n\t"
-        "adc %10, %2   \n\t"
-        "adc %11, %3   \n\t"
-        "adc %12, %4   \n\t"
-        "adc %13, %5   \n\t"
-        "adc %14, %6   \n\t"
-        "adc %15, %7   \n\t"
-        : "+r"(this->data_[0]), "+r"(this->data_[1]), "+r"(this->data_[2]), "+r"(this->data_[3]),
-          "+r"(this->data_[4]), "+r"(this->data_[5]), "+r"(this->data_[6]), "+r"(this->data_[7])
-        : "r"(other.data_[0]), "r"(other.data_[1]), "r"(other.data_[2]), "r"(other.data_[3]),
-          "r"(other.data_[4]), "r"(other.data_[5]), "r"(other.data_[6]), "r"(other.data_[7])
+  uint128_t &operator+=(const uint128_t &other) {
+    asm("add %2, %0   \n\t"
+        "adc %3, %1   \n\t"
+        : "+r"(this->lo_), "+r"(this->hi_)
+        : "r"(other.lo_), "r"(other.hi_)
         : "cc");
     return *this;
   }
 
-  uint512_t &operator-=(const uint64_t &other) {
-    // uint128_t complement(MAX_UINT64, MAX_UINT64 - value + 1);
-    // return this->operator+(complement);
+  uint128_t &operator-=(const uint128_t &other) {
+    uint128_t complement(MAX_UINT64 - other.hi_, MAX_UINT64 - other.lo_ + 1);
+    return this->operator+=(complement);
   }
 
-  friend bool operator==(const uint512_t &left, const uint512_t &right) {
-    for (size_t i = 0; i < SIZE_DATA; i += 1) {
-      if (left.data_[i] != right.data_[i]) {
-        return false;
-      }
+  friend bool operator==(const uint128_t &left, const uint128_t &right) {
+    return left.hi_ == right.hi_ and left.lo_ == right.lo_;
+  }
+
+  friend bool operator!=(const uint128_t &left, const uint128_t &right) {
+    return not (left == right);
+  }
+
+  friend bool operator>(const uint128_t &left, const uint128_t &right) {
+    if (left.hi_ > right.hi_) {
+      return true;
+    } else if (left.hi_ < right.hi_) {
+      return false;
+    } else {
+      return left.lo_ > right.lo_;
     }
-    return true;
   }
 
-  friend bool operator>(const uint512_t &left, const uint512_t &right) {
-    for (size_t i = 0; i < SIZE_DATA; i += 1) {
-      if (left.data_[i] < right.data_[i]) {
-        return false;
-      } else if (left.data_[i] != 0 and left.data_[i] == right.data_[i]) {
-        return false;
-      }
+  friend bool operator>=(const uint128_t &left, const uint128_t &right) {
+    return (left > right) or (left == right);
+  }
+
+  friend bool operator<(const uint128_t &left, const uint128_t &right) {
+    if (left.hi_ > right.hi_) {
+      return false;
+    } else if (left.hi_ < right.hi_) {
+      return true;
+    } else {
+      return left.lo_ < right.lo_;
     }
-    return true;
   }
 
-  friend bool operator>=(const uint512_t &left, const uint512_t &right) {
-    for (size_t i = 0; i < SIZE_DATA; i += 1) {
-      if (left.data_[i] < right.data_[i]) {
-        return false;
-      }
-    }
-    return true;
+  friend bool operator<=(const uint128_t &left, const uint128_t &right) {
+    return (left < right) or (left == right);
   }
 
-  friend bool operator<(const uint512_t &left, const uint512_t &right) {
-    for (size_t i = 0; i < SIZE_DATA; i += 1) {
-      if (left.data_[i] > right.data_[i]) {
-        return false;
-      } else if (left.data_[i] != 0 and left.data_[i] == right.data_[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  friend bool operator<=(const uint512_t &left, const uint512_t &right) {
-    for (size_t i = 0; i < SIZE_DATA; i += 1) {
-      if (left.data_[i] > right.data_[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  friend std::ostream &operator<<(std::ostream &os, const uint512_t &obj) {
-    return os << obj.toString();
+  friend std::ostream &operator<<(std::ostream &os, const uint128_t &object) {
+    return os << object.toString();
   }
 
 private:
-  // little-endian:
-  // uint64_t(0x12345678) -> [0x78, 0x56, 0x34, 0x12]
-  // uint512_t(0x2222222211111111) -> [data_[0] = 0x11111111l, data_[1] = 0x22222222]
-  uint64_t data_[SIZE_DATA];
+  uint64_t hi_, lo_;
+};
+
+class uint256_t {
+private:
+  uint128_t hi_, lo_;
+};
+
+class uint512_t {
+private:
+  uint256_t hi_, lo_;
 };
 
 #endif
