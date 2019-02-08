@@ -8,7 +8,7 @@ SET(CMAKE_CXX_COMPILER /usr/bin/clang++-6.0)
 set(CMAKE_BUILD_TYPE Debug)
  
 # Define project name
-project(uint128_t)
+project(uint512_t)
 
 #
 include_directories(${OPENCL_INCLUDE_DIR})
