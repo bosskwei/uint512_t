@@ -31,6 +31,25 @@ void test_add64() {
     }
     std::cout << "test_add64() passed." << std::endl;
 }
+void test_add12864() {
+    {
+        uint64_t hi = 0xFFFFFFFFFFFFFFFF;
+        uint64_t lo = 0xFFFFFFFFFFFFFFFF;
+        uint64_t value = 0;
+        uint64_t carry = 1;
+        op::add12864(hi, lo, value, carry);
+        assert(hi == 0 and lo == 0 and carry == 1);
+    }
+    {
+        uint64_t hi = 0xFFFFFFFFFFFFFFFF;
+        uint64_t lo = 0xFFFFFFFFFFFFFFFF;
+        uint64_t value = 1;
+        uint64_t carry = 0;
+        op::add12864(hi, lo, value, carry);
+        assert(hi == 0 and lo == 0 and carry == 1);
+    }
+    std::cout << "test_add12864() passed." << std::endl;
+}
 void test_add128() {
     {
         uint64_t hi = 0xFFFFFFFFFFFFFFFF;
@@ -76,7 +95,6 @@ void test_mul12864() {
         uint64_t lo = 0xFFFFFFFFFFFFFFFF;
         uint64_t value = 0xF;
         uint64_t spill = op::mul12864(hi, lo, value);
-        std::cout << std::hex << hi << " " << lo << " " << spill << std::endl;
         assert(spill == 0xE and hi == 0xFFFFFFFFFFFFFFFF and lo == 0xFFFFFFFFFFFFFFF1);
     }
     {
@@ -84,7 +102,6 @@ void test_mul12864() {
         uint64_t lo = 0xFFFFFFFFFFFFFFFF;
         uint64_t value = 0xFFFFFFFFFFFFFFFF;
         uint64_t spill = op::mul12864(hi, lo, value);
-        std::cout << std::hex << hi << " " << lo << " " << spill << std::endl;
         assert(spill == 0xFFFFFFFFFFFFFFFE and hi == 0xFFFFFFFFFFFFFFFF and lo == 0x1);
     }
     std::cout << "test_mul12864() passed." << std::endl;
@@ -270,6 +287,25 @@ void test_mul_and_div() {
         a *= 2;
         checkEqual(a, uint128_t("0x3fffffffffffffffe"));
     }
+    {
+        uint128_t a("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
+        uint128_t b("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
+        a *= b;
+        checkEqual(a, 1);
+    }
+    {
+        uint128_t a("0x123456789012345678901234567890FF");
+        uint128_t b("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        a *= b;
+        checkEqual(a, uint128_t("0xEDCBA9876FEDCBA9876FEDCBA9876F01"));
+    }
+    {
+        uint128_t a("0x123456789012345678901234567890FF");
+        uint128_t b("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        uint128_t c = a.mul128(b);
+        checkEqual(a, uint128_t("0xEDCBA9876FEDCBA9876FEDCBA9876F01"));
+        checkEqual(c, uint128_t("0x123456789012345678901234567890fe"));
+    }
     std::cout << "test_mul_and_div() passed." << std::endl;
 }
 
@@ -443,6 +479,45 @@ void test_add_and_sub() {
     std::cout << "test_add_and_sub() passed." << std::endl;
 }
 
+void test_mul_and_div() {
+    auto checkEqual = [](const uint256_t &output, const uint256_t &expect) {
+        if (output != expect) {
+            std::cout << "expect: " << expect << std::endl;
+            std::cout << "output: " << output << std::endl;
+            throw std::runtime_error("assert failed");
+        }
+    };
+    {
+        uint256_t a("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
+        uint128_t b("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
+        uint128_t c = a.mul128(b);
+        checkEqual(c, uint128_t("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE"));
+        checkEqual(a, uint256_t("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000001"));
+    }
+    {
+        uint256_t a("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
+        uint128_t b("0xFFFFFFFFFFFFF6FFFFF1FFFFFFABCDEF");
+        uint128_t c = a.mul128(b);
+        checkEqual(c, uint128_t("0xfffffffffffff6fffff1ffffffabcdee"));
+        checkEqual(a, uint256_t("0xffffffffffffffffffffffffffffffff0000000000000900000e000000543211"));
+    }
+    {
+        uint256_t a("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
+        uint256_t b("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
+        uint256_t c = a.mul256(b);
+        checkEqual(c, uint256_t("0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe"));
+        checkEqual(a, 1);
+    }
+    {
+        uint256_t a("0xffffffffffffffffffffffffffffffff0000000000000900000e000000543211");
+        uint256_t b("0xfffffffffffabcdefffffffffeffffff0000000000000900000e000000543211");
+        uint256_t c = a.mul256(b);
+        checkEqual(c, uint256_t("0xfffffffffffabcdefffffffffefffffe0000000000055521001bffffd24c3ad9"));
+        checkEqual(a, uint256_t("0x5431fe3bf1b5f8ceffe3abcdeea89bdefc0000c9eb853b3579dc1bb0e4f2a521"));
+    }
+    std::cout << "test_mul_and_div() passed." << std::endl;
+}
+
 void test_performance() {
     {
         auto before = std::chrono::system_clock::now();
@@ -502,9 +577,106 @@ void test_performance() {
 }
 }  // namespace test_uint256
 
+namespace test_uint512 {
+    void test_mul_and_div() {
+    auto checkEqual = [](const uint512_t &output, const uint512_t &expect) {
+        if (output != expect) {
+            std::cout << "expect: " << expect << std::endl;
+            std::cout << "output: " << output << std::endl;
+            throw std::runtime_error("assert failed");
+        }
+    };
+    {
+        uint512_t a("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
+        uint256_t b("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
+        uint256_t c = a.mul256(b);
+        checkEqual(c, uint256_t("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE"));
+        checkEqual(a, uint512_t("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000000000000000000000000000000000000000000000000000000000000001"));
+    }
+    std::cout << "test_mul_and_div() passed." << std::endl;
+}
+
+void test_performance() {
+    {
+        auto before = std::chrono::system_clock::now();
+        for (uint64_t i = 0; i < 0xFFFFF; i += 1) {
+            ;
+        }
+        auto after = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = after - before;
+        std::cout << "time `+=` uint64_t: " << diff.count() << std::endl;
+    }
+    {
+        auto before = std::chrono::system_clock::now();
+        for (uint128_t i = 0; i < 0xFFFFF; i += 1) {
+            ;
+        }
+        auto after = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = after - before;
+        std::cout << "time `+=` uint128_t: " << diff.count() << std::endl;
+    }
+    {
+        auto before = std::chrono::system_clock::now();
+        for (uint256_t i = 0; i < 0xFFFFF; i += 1) {
+            ;
+        }
+        auto after = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = after - before;
+        std::cout << "time `+=` uint256_t: " << diff.count() << std::endl;
+    }
+    {
+        auto before = std::chrono::system_clock::now();
+        for (uint512_t i = 0; i < 0xFFFFF; i += 1) {
+            ;
+        }
+        auto after = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = after - before;
+        std::cout << "time `+=` uint512_t: " << diff.count() << std::endl;
+    }
+    {
+        auto before = std::chrono::system_clock::now();
+        for (uint64_t i = 0xFFFFF; i > 0; i -= 1) {
+            ;
+        }
+        auto after = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = after - before;
+        std::cout << "time `-=` uint64_t: " << diff.count() << std::endl;
+    }
+    {
+        auto before = std::chrono::system_clock::now();
+        for (uint128_t i = 0xFFFFF; i > 0; i -= 1) {
+            ;
+        }
+        auto after = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = after - before;
+        std::cout << "time `-=` uint128_t: " << diff.count() << std::endl;
+    }
+    {
+        auto before = std::chrono::system_clock::now();
+        for (uint256_t i = 0xFFFFF; i > 0; i -= 1) {
+            ;
+        }
+        auto after = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = after - before;
+        std::cout << "time `-=` uint256_t: " << diff.count() << std::endl;
+    }
+    {
+        auto before = std::chrono::system_clock::now();
+        for (uint512_t i = 0xFFFFF; i > 0; i -= 1) {
+            ;
+        }
+        auto after = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = after - before;
+        std::cout << "time `-=` uint512_t: " << diff.count() << std::endl;
+    }
+    std::cout << "test_performance() passed." << std::endl;
+}
+}
+
 int main() {
     //
     test_op::test_add64();
+    test_op::test_add12864();
     test_op::test_add128();
     test_op::test_mul64();
     test_op::test_mul12864();
@@ -518,6 +690,10 @@ int main() {
     test_uint256::test_constructor();
     test_uint256::test_bitwise_ops();
     test_uint256::test_add_and_sub();
+    test_uint256::test_mul_and_div();
     test_uint256::test_performance();
+    //
+    test_uint512::test_mul_and_div();
+    test_uint512::test_performance();
     return 0;
 }
