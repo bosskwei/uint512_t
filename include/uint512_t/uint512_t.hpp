@@ -224,7 +224,15 @@ public:
     }
   }
 
-  virtual void asComplement() = 0;
+  virtual SubT getMaxSubT() = 0;
+
+  void asComplement() {
+    // complement(0) -> 0
+    if (this->hi_ > 0 or this->lo_ > 0) {
+      this->hi_ = getMaxSubT() - this->hi_;
+      this->lo_ = getMaxSubT() - this->lo_ + 1;
+    }
+  }
 
   T toComplement() const {
     T res(this->hi_, this->lo_);
@@ -326,13 +334,9 @@ public:
     this->parseString(value, BYTES_UINT128, BYTES_UINT64);
   }
 
-  void asComplement() override {
+  uint64_t getMaxSubT() final {
     static uint64_t MAX_UINT64 = 0xFFFFFFFFFFFFFFFF;
-    // complement(0) -> 0
-    if (this->hi_ > 0 or this->lo_ > 0) {
-      this->hi_ = MAX_UINT64 - this->hi_;
-      this->lo_ = MAX_UINT64 - this->lo_ + 1;
-    }
+    return MAX_UINT64;
   }
 
   std::string toStringQuick() const override {
@@ -376,8 +380,7 @@ public:
   }
 };
 
-template <typename T, typename SubT>
-class base_ext : public base<T, SubT> {
+template <typename T, typename SubT> class base_ext : public base<T, SubT> {
 public:
   base_ext() = delete;
   explicit base_ext(SubT hi, SubT lo) : base<T, SubT>(hi, lo) {}
@@ -393,14 +396,10 @@ public:
     this->parseString(value, BYTES_UINT256, BYTES_UINT128);
   }
 
-  void asComplement() override {
+  uint128_t getMaxSubT() final {
     static uint128_t MAX_UINT128 =
         uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF);
-    // complement(0) -> 0
-    if (this->hi_ > 0 or this->lo_ > 0) {
-      this->hi_ = MAX_UINT128 - this->hi_;
-      this->lo_ = MAX_UINT128 - this->lo_ + 1;
-    }
+    return MAX_UINT128;
   }
 
   std::string toStringQuick() const override {
@@ -471,16 +470,11 @@ public:
     this->parseString(value, BYTES_UINT512, BYTES_UINT256);
   }
 
-  void asComplement() override {
+  uint256_t getMaxSubT() final {
     const uint256_t MAX_UINT256 =
         uint256_t(uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF),
                   uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF));
-
-    // complement(0) -> 0
-    if (this->hi_ > 0 or this->lo_ > 0) {
-      this->hi_ = MAX_UINT256 - this->hi_;
-      this->lo_ = MAX_UINT256 - this->lo_ + 1;
-    }
+    return MAX_UINT256;
   }
 
   std::string toStringQuick() const override {
