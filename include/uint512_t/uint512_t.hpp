@@ -384,6 +384,15 @@ template <typename T, typename SubT> class base_ext : public base<T, SubT> {
 public:
   base_ext() = delete;
   explicit base_ext(SubT hi, SubT lo) : base<T, SubT>(hi, lo) {}
+
+  std::string toStringQuick() const final {
+    return this->hi_.toStringQuick() + this->lo_.toStringQuick();
+  }
+
+  void addWithCarry(const T &other, uint64_t &carry) {
+    this->lo_.addWithCarry(other.lo_, carry);
+    this->hi_.addWithCarry(other.hi_, carry);
+  }
 };
 
 class uint256_t : public base_ext<uint256_t, uint128_t> {
@@ -400,15 +409,6 @@ public:
     static uint128_t MAX_UINT128 =
         uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF);
     return MAX_UINT128;
-  }
-
-  std::string toStringQuick() const override {
-    return this->hi_.toStringQuick() + this->lo_.toStringQuick();
-  }
-
-  void addWithCarry(const uint256_t &other, uint64_t &carry) {
-    this->lo_.addWithCarry(other.lo_, carry);
-    this->hi_.addWithCarry(other.hi_, carry);
   }
 
   uint128_t mul128(const uint128_t &value) {
@@ -475,15 +475,6 @@ public:
         uint256_t(uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF),
                   uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF));
     return MAX_UINT256;
-  }
-
-  std::string toStringQuick() const override {
-    return this->hi_.toStringQuick() + this->lo_.toStringQuick();
-  }
-
-  void addWithCarry(const uint512_t &other, uint64_t &carry) {
-    this->lo_.addWithCarry(other.lo_, carry);
-    this->hi_.addWithCarry(other.hi_, carry);
   }
 
   uint256_t mul256(const uint256_t &value) {
