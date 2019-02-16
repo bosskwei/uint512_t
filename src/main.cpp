@@ -29,7 +29,7 @@ void test_add64() {
         op::add64(dst, value, carry);
         assert(dst == 0xFFFFFFFFFFFFFFFF and carry == 1);
     }
-    std::cout << "test_add64() passed." << std::endl;
+    std::cout << "op::test_add64() passed." << std::endl;
 }
 void test_add12864() {
     {
@@ -48,7 +48,7 @@ void test_add12864() {
         op::add12864(hi, lo, value, carry);
         assert(hi == 0 and lo == 0 and carry == 1);
     }
-    std::cout << "test_add12864() passed." << std::endl;
+    std::cout << "op::test_add12864() passed." << std::endl;
 }
 void test_add128() {
     {
@@ -78,7 +78,7 @@ void test_add128() {
         op::add128(hi, lo, vhi, vlo, carry);
         assert(hi == 0xFFFFFFFFFFFFFFFF and lo == 0xFFFFFFFFFFFFFFFF and carry == 1);
     }
-    std::cout << "test_add128() passed." << std::endl;
+    std::cout << "op::test_add128() passed." << std::endl;
 }
 void test_mul64() {
     {
@@ -87,7 +87,7 @@ void test_mul64() {
         uint64_t spill = op::mul64(dst, value);
         assert(dst == 1 and spill == 0xfffffffffffffffe);
     }
-    std::cout << "test_mul64() passed." << std::endl;
+    std::cout << "op::test_mul64() passed." << std::endl;
 }
 void test_mul12864() {
     {
@@ -104,7 +104,7 @@ void test_mul12864() {
         uint64_t spill = op::mul12864(hi, lo, value);
         assert(spill == 0xFFFFFFFFFFFFFFFE and hi == 0xFFFFFFFFFFFFFFFF and lo == 0x1);
     }
-    std::cout << "test_mul12864() passed." << std::endl;
+    std::cout << "op::test_mul12864() passed." << std::endl;
 }
 }  // namespace test_op
 
@@ -179,7 +179,7 @@ void test_constructor() {
             throw std::runtime_error("check failed");
         }
     }
-    std::cout << "test_constructor() passed." << std::endl;
+    std::cout << "uint128::test_constructor() passed." << std::endl;
 }
 
 void test_bitwise_ops() {
@@ -198,7 +198,7 @@ void test_bitwise_ops() {
     assertEx(7, uint128_t("0x1") >= uint128_t("0x0"));
     assertEx(8, uint128_t("0x01") == 1);
     assertEx(9, uint128_t(20000000) == 20000000);
-    std::cout << "test_bitwise_ops() passed." << std::endl;
+    std::cout << "uint128::test_bitwise_ops() passed." << std::endl;
 }
 
 void test_add_and_sub() {
@@ -261,7 +261,7 @@ void test_add_and_sub() {
         }
         checkEqual(a, uint128_t("0x99_00000000_0000009A"));
     }
-    std::cout << "test_add_and_sub() passed." << std::endl;
+    std::cout << "uint128::test_add_and_sub() passed." << std::endl;
 }
 
 void test_mul_and_div() {
@@ -306,7 +306,7 @@ void test_mul_and_div() {
         checkEqual(a, uint128_t("0xEDCBA9876FEDCBA9876FEDCBA9876F01"));
         checkEqual(c, uint128_t("0x123456789012345678901234567890fe"));
     }
-    std::cout << "test_mul_and_div() passed." << std::endl;
+    std::cout << "uint128::test_mul_and_div() passed." << std::endl;
 }
 
 void test_performance() {
@@ -346,7 +346,7 @@ void test_performance() {
         std::chrono::duration<double> diff = after - before;
         std::cout << "time `-=` uint128_t: " << diff.count() << std::endl;
     }
-    std::cout << "test_performance() passed." << std::endl;
+    std::cout << "uint128::test_performance() passed." << std::endl;
 }
 }  // namespace test_uint128
 
@@ -384,7 +384,7 @@ void test_constructor() {
             throw std::runtime_error("check failed");
         }
     }
-    std::cout << "test_constructor() passed." << std::endl;
+    std::cout << "uint256::test_constructor() passed." << std::endl;
 }
 
 void test_bitwise_ops() {
@@ -405,7 +405,7 @@ void test_bitwise_ops() {
                     uint256_t("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFE"));
     assertEx(8, uint256_t("0x01") == 1);
     assertEx(9, uint256_t(20000000) == 20000000);
-    std::cout << "test_bitwise_ops() passed." << std::endl;
+    std::cout << "uint256::test_bitwise_ops() passed." << std::endl;
 }
 
 void test_add_and_sub() {
@@ -476,7 +476,7 @@ void test_add_and_sub() {
             "000F000000000000");
         checkEqual(a - b, c);
     }
-    std::cout << "test_add_and_sub() passed." << std::endl;
+    std::cout << "uint256::test_add_and_sub() passed." << std::endl;
 }
 
 void test_mul_and_div() {
@@ -515,7 +515,7 @@ void test_mul_and_div() {
         checkEqual(c, uint256_t("0xfffffffffffabcdefffffffffefffffe0000000000055521001bffffd24c3ad9"));
         checkEqual(a, uint256_t("0x5431fe3bf1b5f8ceffe3abcdeea89bdefc0000c9eb853b3579dc1bb0e4f2a521"));
     }
-    std::cout << "test_mul_and_div() passed." << std::endl;
+    std::cout << "uint256::test_mul_and_div() passed." << std::endl;
 }
 
 void test_performance() {
@@ -573,7 +573,7 @@ void test_performance() {
         std::chrono::duration<double> diff = after - before;
         std::cout << "time `-=` uint256_t: " << diff.count() << std::endl;
     }
-    std::cout << "test_performance() passed." << std::endl;
+    std::cout << "uint256::test_performance() passed." << std::endl;
 }
 }  // namespace test_uint256
 
@@ -593,7 +593,7 @@ namespace test_uint512 {
         checkEqual(c, uint256_t("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE"));
         checkEqual(a, uint512_t("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000000000000000000000000000000000000000000000000000000000000001"));
     }
-    std::cout << "test_mul_and_div() passed." << std::endl;
+    std::cout << "uint512::test_mul_and_div() passed." << std::endl;
 }
 
 void test_performance() {
@@ -669,7 +669,7 @@ void test_performance() {
         std::chrono::duration<double> diff = after - before;
         std::cout << "time `-=` uint512_t: " << diff.count() << std::endl;
     }
-    std::cout << "test_performance() passed." << std::endl;
+    std::cout << "uint512::test_performance() passed." << std::endl;
 }
 }
 
@@ -685,13 +685,11 @@ int main() {
     test_uint128::test_bitwise_ops();
     test_uint128::test_add_and_sub();
     test_uint128::test_mul_and_div();
-    test_uint128::test_performance();
     //
     test_uint256::test_constructor();
     test_uint256::test_bitwise_ops();
     test_uint256::test_add_and_sub();
     test_uint256::test_mul_and_div();
-    test_uint256::test_performance();
     //
     test_uint512::test_mul_and_div();
     test_uint512::test_performance();

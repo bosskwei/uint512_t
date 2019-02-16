@@ -257,10 +257,24 @@ public:
     return hex;
   }
 
+  virtual void addWithCarry(const T &other, uint64_t &carry) = 0;
+
   T &operator=(const T &other) {
     this->hi_ = other.hi_;
     this->lo_ = other.lo_;
     return *this;
+  }
+
+  T &operator+=(const T &other) {
+    uint64_t carry = 0;
+    this->addWithCarry(other, carry);
+    // We need the `static_cast` because `operator-=` call to `operator+=`,
+    // cause 'cannot bind to a value of unrelated type'
+    return *static_cast<T *>(this);
+  }
+
+  T &operator-=(const T &other) {
+    return this->operator+=(other.toComplement());
   }
 
   friend bool operator==(const T &left, const T &right) {
@@ -343,7 +357,7 @@ public:
     return stringFormat("%016" PRIX64 "%016" PRIX64 "", this->hi_, this->lo_);
   }
 
-  void addWithCarry(const uint128_t &other, uint64_t &carry) {
+  void addWithCarry(const uint128_t &other, uint64_t &carry) final {
     op::add128(this->hi_, this->lo_, other.hi_, other.lo_, carry);
   }
 
@@ -364,16 +378,6 @@ public:
     return uint128_t(f, c);
   }
 
-  uint128_t &operator+=(const uint128_t &other) {
-    uint64_t carry = 0;
-    this->addWithCarry(other, carry);
-    return *this;
-  }
-
-  uint128_t &operator-=(const uint128_t &other) {
-    return this->operator+=(other.toComplement());
-  }
-
   uint128_t &operator*=(const uint128_t &other) {
     this->mul128(other);
     return *this;
@@ -389,10 +393,25 @@ public:
     return this->hi_.toStringQuick() + this->lo_.toStringQuick();
   }
 
-  void addWithCarry(const T &other, uint64_t &carry) {
+  void addWithCarry(const T &other, uint64_t &carry) final {
     this->lo_.addWithCarry(other.lo_, carry);
     this->hi_.addWithCarry(other.hi_, carry);
   }
+  /*
+  SubT mulSubT(const SubT &value) {
+    //      h  l
+    //         v
+    //     s_l a
+    // s_h  b
+    //
+    SubT spill_lo = this->lo_.mul128(value);
+    SubT spill_hi = this->hi_.mul128(value);
+    uint64_t carry = 0;
+    this->hi_.addWithCarry(spill_lo, carry);
+    spill_hi.addWithCarry(0, carry);
+    return spill_hi;
+  }
+  */
 };
 
 class uint256_t : public base_ext<uint256_t, uint128_t> {
@@ -442,16 +461,6 @@ public:
     this->lo_ = ab.lo_;
     this->hi_ = ed.lo_;
     return uint256_t(f, ed.hi_);
-  }
-
-  uint256_t &operator+=(const uint256_t &other) {
-    uint64_t carry = 0;
-    this->addWithCarry(other, carry);
-    return *this;
-  }
-
-  uint256_t &operator-=(const uint256_t &other) {
-    return this->operator+=(other.toComplement());
   }
 
   uint256_t &operator*=(const uint256_t &other) {
@@ -508,16 +517,6 @@ public:
     this->lo_ = ab.lo_;
     this->hi_ = ed.lo_;
     return uint512_t(f, ed.hi_);
-  }
-
-  uint512_t &operator+=(const uint512_t &other) {
-    uint64_t carry = 0;
-    this->addWithCarry(other, carry);
-    return *this;
-  }
-
-  uint512_t &operator-=(const uint512_t &other) {
-    return this->operator+=(other.toComplement());
   }
 
   uint512_t &operator*=(const uint512_t &other) {
