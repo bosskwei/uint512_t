@@ -367,7 +367,7 @@ public:
     op::add128(this->hi_, this->lo_, other.hi_, other.lo_, carry);
   }
 
-  uint128_t mul128(const uint128_t &other) {
+  uint128_t mulTWithSpill(const uint128_t &other) final {
     //      h1 l1
     //      h2 l2
     //    c  b  a
@@ -382,10 +382,6 @@ public:
     this->hi_ = b;
     f += carry;
     return uint128_t(f, c);
-  }
-
-  uint128_t mulTWithSpill(const uint128_t &other) final {
-    return this->mul128(other);
   }
 };
 
@@ -472,6 +468,24 @@ public:
   }
 };
 
-// class uint1024_t : public base<uint1024_t, uint512_t> {};
+class uint1024_t : public base_ext<uint1024_t, uint512_t> {
+public:
+  uint1024_t() : base_ext(0, 0) {}
+  uint1024_t(uint64_t value) : base_ext(0, value) {}
+  uint1024_t(const uint512_t &value) : base_ext(0, value) {}
+  uint1024_t(const uint512_t &hi, const uint512_t &lo) : base_ext(hi, lo) {}
+  explicit uint1024_t(const std::string &value) : base_ext(0, 0) {
+    this->parseString(value, BYTES_UINT1024, BYTES_UINT512);
+  }
+
+  uint512_t getMaxSubT() final {
+    const uint512_t MAX_UINT512 =
+        uint512_t(uint256_t(uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF),
+                            uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF)),
+                  uint256_t(uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF),
+                            uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF)));
+    return MAX_UINT512;
+  }
+};
 
 #endif

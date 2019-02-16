@@ -302,7 +302,7 @@ void test_mul_and_div() {
     {
         uint128_t a("0x123456789012345678901234567890FF");
         uint128_t b("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-        uint128_t c = a.mul128(b);
+        uint128_t c = a.mulTWithSpill(b);
         checkEqual(a, uint128_t("0xEDCBA9876FEDCBA9876FEDCBA9876F01"));
         checkEqual(c, uint128_t("0x123456789012345678901234567890fe"));
     }
