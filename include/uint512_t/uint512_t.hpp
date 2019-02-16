@@ -258,6 +258,7 @@ public:
   }
 
   virtual void addWithCarry(const T &other, uint64_t &carry) = 0;
+  virtual T mulTWithSpill(const T &other) = 0;
 
   T &operator=(const T &other) {
     this->hi_ = other.hi_;
@@ -275,6 +276,11 @@ public:
 
   T &operator-=(const T &other) {
     return this->operator+=(other.toComplement());
+  }
+
+  T &operator*=(const T &other) {
+    this->mulTWithSpill(other);
+    return *static_cast<T *>(this);
   }
 
   friend bool operator==(const T &left, const T &right) {
@@ -378,9 +384,8 @@ public:
     return uint128_t(f, c);
   }
 
-  uint128_t &operator*=(const uint128_t &other) {
-    this->mul128(other);
-    return *this;
+  uint128_t mulTWithSpill(const uint128_t &other) final {
+    return this->mul128(other);
   }
 };
 
@@ -397,21 +402,39 @@ public:
     this->lo_.addWithCarry(other.lo_, carry);
     this->hi_.addWithCarry(other.hi_, carry);
   }
-  /*
-  SubT mulSubT(const SubT &value) {
+
+  SubT mulSubTWithSpill(const SubT &value) {
     //      h  l
     //         v
     //     s_l a
     // s_h  b
     //
-    SubT spill_lo = this->lo_.mul128(value);
-    SubT spill_hi = this->hi_.mul128(value);
+    SubT spill_lo = this->lo_.mulTWithSpill(value);
+    SubT spill_hi = this->hi_.mulTWithSpill(value);
     uint64_t carry = 0;
     this->hi_.addWithCarry(spill_lo, carry);
     spill_hi.addWithCarry(0, carry);
     return spill_hi;
   }
-  */
+
+  T mulTWithSpill(const T &other) final {
+    //      h1 l1
+    //      h2 l2
+    //    c  b  a
+    // f  e  d
+    //
+    T ab(this->hi_, this->lo_);
+    SubT c = ab.mulSubTWithSpill(other.lo_);
+    T ed(this->hi_, this->lo_);
+    SubT f = ed.mulSubTWithSpill(other.hi_);
+    uint64_t carry = 0;
+    ed.lo_.addWithCarry(ab.hi_, carry);
+    ed.hi_.addWithCarry(c, carry);
+    f.addWithCarry(0, carry);
+    this->lo_ = ab.lo_;
+    this->hi_ = ed.lo_;
+    return T(f, ed.hi_);
+  }
 };
 
 class uint256_t : public base_ext<uint256_t, uint128_t> {
@@ -428,44 +451,6 @@ public:
     static uint128_t MAX_UINT128 =
         uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF);
     return MAX_UINT128;
-  }
-
-  uint128_t mul128(const uint128_t &value) {
-    //      h  l
-    //         v
-    //     s_l a
-    // s_h  b
-    //
-    uint128_t spill_lo = this->lo_.mul128(value);
-    uint128_t spill_hi = this->hi_.mul128(value);
-    uint64_t carry = 0;
-    this->hi_.addWithCarry(spill_lo, carry);
-    spill_hi.addWithCarry(0, carry);
-    return spill_hi;
-  }
-
-  uint256_t mul256(const uint256_t &other) {
-    //      h1 l1
-    //      h2 l2
-    //    c  b  a
-    // f  e  d
-    //
-    uint256_t ab(this->hi_, this->lo_);
-    uint128_t c = ab.mul128(other.lo_);
-    uint256_t ed(this->hi_, this->lo_);
-    uint128_t f = ed.mul128(other.hi_);
-    uint64_t carry = 0;
-    ed.lo_.addWithCarry(ab.hi_, carry);
-    ed.hi_.addWithCarry(c, carry);
-    f.addWithCarry(0, carry);
-    this->lo_ = ab.lo_;
-    this->hi_ = ed.lo_;
-    return uint256_t(f, ed.hi_);
-  }
-
-  uint256_t &operator*=(const uint256_t &other) {
-    this->mul256(other);
-    return *this;
   }
 };
 
@@ -484,44 +469,6 @@ public:
         uint256_t(uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF),
                   uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF));
     return MAX_UINT256;
-  }
-
-  uint256_t mul256(const uint256_t &value) {
-    //      h  l
-    //         v
-    //     s_l a
-    // s_h  b
-    //
-    uint256_t spill_lo = this->lo_.mul256(value);
-    uint256_t spill_hi = this->hi_.mul256(value);
-    uint64_t carry = 0;
-    this->hi_.addWithCarry(spill_lo, carry);
-    spill_hi.addWithCarry(0, carry);
-    return spill_hi;
-  }
-
-  uint512_t mul512(const uint512_t &other) {
-    //      h1 l1
-    //      h2 l2
-    //    c  b  a
-    // f  e  d
-    //
-    uint512_t ab(this->hi_, this->lo_);
-    uint256_t c = ab.mul256(other.lo_);
-    uint512_t ed(this->hi_, this->lo_);
-    uint256_t f = ed.mul256(other.hi_);
-    uint64_t carry = 0;
-    ed.lo_.addWithCarry(ab.hi_, carry);
-    ed.hi_.addWithCarry(c, carry);
-    f.addWithCarry(0, carry);
-    this->lo_ = ab.lo_;
-    this->hi_ = ed.lo_;
-    return uint512_t(f, ed.hi_);
-  }
-
-  uint512_t &operator*=(const uint512_t &other) {
-    this->mul512(other);
-    return *this;
   }
 };
 

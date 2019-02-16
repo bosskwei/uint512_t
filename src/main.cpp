@@ -490,28 +490,28 @@ void test_mul_and_div() {
     {
         uint256_t a("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
         uint128_t b("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
-        uint128_t c = a.mul128(b);
+        uint128_t c = a.mulSubTWithSpill(b);
         checkEqual(c, uint128_t("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE"));
         checkEqual(a, uint256_t("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000001"));
     }
     {
         uint256_t a("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
         uint128_t b("0xFFFFFFFFFFFFF6FFFFF1FFFFFFABCDEF");
-        uint128_t c = a.mul128(b);
+        uint128_t c = a.mulSubTWithSpill(b);
         checkEqual(c, uint128_t("0xfffffffffffff6fffff1ffffffabcdee"));
         checkEqual(a, uint256_t("0xffffffffffffffffffffffffffffffff0000000000000900000e000000543211"));
     }
     {
         uint256_t a("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
         uint256_t b("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
-        uint256_t c = a.mul256(b);
+        uint256_t c = a.mulTWithSpill(b);
         checkEqual(c, uint256_t("0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe"));
         checkEqual(a, 1);
     }
     {
         uint256_t a("0xffffffffffffffffffffffffffffffff0000000000000900000e000000543211");
         uint256_t b("0xfffffffffffabcdefffffffffeffffff0000000000000900000e000000543211");
-        uint256_t c = a.mul256(b);
+        uint256_t c = a.mulTWithSpill(b);
         checkEqual(c, uint256_t("0xfffffffffffabcdefffffffffefffffe0000000000055521001bffffd24c3ad9"));
         checkEqual(a, uint256_t("0x5431fe3bf1b5f8ceffe3abcdeea89bdefc0000c9eb853b3579dc1bb0e4f2a521"));
     }
@@ -589,7 +589,7 @@ namespace test_uint512 {
     {
         uint512_t a("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
         uint256_t b("0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
-        uint256_t c = a.mul256(b);
+        uint256_t c = a.mulSubTWithSpill(b);
         checkEqual(c, uint256_t("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE"));
         checkEqual(a, uint512_t("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000000000000000000000000000000000000000000000000000000000000001"));
     }
