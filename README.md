@@ -6,12 +6,10 @@
 ~~ 1. mul and div support ~~
 ~~ 2. fine sub and support negative (with + - flag) ~~
 ~~ 1. refine mulT and mulSubT~~
+~~ 3. impl += -= *= /= ~~
 
-
-3. impl += -= *= /=
 4. impl mod, mod_inverse, pow, [q, r = (a // b, x % y)]
-5. if uint128_add impl cc flag, so that uint256_t could use it
-6. remove some virtual function
+5. remove some virtual function
 
 
 Note:
