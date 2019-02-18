@@ -300,16 +300,7 @@ public:
     this->lo_ ^= other.lo_;
     return *static_cast<T *>(this);
   }
-/*
-  T &operator>>=(uint64_t value) {
-    return *static_cast<T *>(this);
-  }
 
-  T &operator<<=(uint64_t value) {
-    this->lo_ <<= value;
-    return *static_cast<T *>(this);
-  }
-*/
   friend bool operator==(const T &left, const T &right) {
     return left.hi_ == right.hi_ and left.lo_ == right.lo_;
   }
