@@ -109,6 +109,27 @@ void test_mul12864() {
   }
   std::cout << "op::test_mul12864() passed." << std::endl;
 }
+void test_divmod64() {
+  {
+    uint64_t dst = 1024;
+    uint64_t value = 64;
+    uint64_t remain = op::divmod64(dst, value);
+    assert(dst == 16 and remain == 0);
+  }
+  {
+    uint64_t dst = 1024;
+    uint64_t value = 1023;
+    uint64_t remain = op::divmod64(dst, value);
+    assert(dst == 1 and remain == 1);
+  }
+  {
+    uint64_t dst = 1024;
+    uint64_t value = 1025;
+    uint64_t remain = op::divmod64(dst, value);
+    assert(dst == 0 and remain == 1024);
+  }
+  std::cout << "op::test_divmod64() passed." << std::endl;
+}
 } // namespace test_op
 
 namespace test_uint128 {
@@ -308,6 +329,25 @@ void test_mul_and_div() {
     uint128_t c = a.mulTWithSpill(b);
     checkEqual(a, uint128_t("0xEDCBA9876FEDCBA9876FEDCBA9876F01"));
     checkEqual(c, uint128_t("0x123456789012345678901234567890fe"));
+  }
+  {
+    uint128_t a("-2");
+    uint128_t b("-3");
+    uint128_t c = a * b;
+    checkEqual(a, uint128_t("-2"));
+    checkEqual(c, uint128_t("6"));
+  }
+  {
+    uint128_t a("-2");
+    uint128_t b("3");
+    uint128_t c = a * b;
+    checkEqual(c, uint128_t("-6"));
+  }
+  {
+    uint128_t a("2");
+    uint128_t b("-3");
+    uint128_t c = a * b;
+    checkEqual(c, uint128_t("-6"));
   }
   std::cout << "uint128::test_mul_and_div() passed." << std::endl;
 }
@@ -651,6 +691,12 @@ void test_mul_and_div() {
     }
   };
   {
+    uint512_t a("-20");
+    uint512_t b("-30");
+    uint512_t c = a * b;
+    checkEqual(c, uint512_t("600"));
+  }
+  {
     uint512_t a(
         "0xFFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_"
         "FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF_FFFFFFFFFFFFFFFF");
@@ -662,6 +708,18 @@ void test_mul_and_div() {
     checkEqual(a, uint512_t("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
                             "FFFFFFFFFFFFFFFF0000000000000000000000000000000000"
                             "000000000000000000000000000001"));
+  }
+  {
+    uint512_t a("-0xF1F2F3F4F5F6F7F8F9F0");
+    uint512_t b("0xFABCDEFABCDEF987654321");
+    uint512_t c = a * b;
+    checkEqual(c, uint512_t("-0xecf9c3660969a1b8564eddd8d1dc50b3344c3207f0"));
+  }
+  {
+    uint512_t a("-0xecf9c3660969a1b8564eddd8d1dc50b3344c3207f0");
+    uint512_t b("-0xf1f2f3f4f5f6");
+    uint512_t c = a * b;
+    checkEqual(c, uint512_t("0xdff806e19b882f4c11c1164cc6037632d36bb383fdcf457a6c50a0"));
   }
   std::cout << "uint512::test_mul_and_div() passed." << std::endl;
 }
@@ -743,7 +801,6 @@ void test_performance() {
 }
 } // namespace test_uint512
 
-
 int main() {
   //
   test_op::test_add64();
@@ -751,6 +808,7 @@ int main() {
   test_op::test_add128();
   test_op::test_mul64();
   test_op::test_mul12864();
+  test_op::test_divmod64();
   //
   test_uint128::test_constructor();
   test_uint128::test_bitwise_ops();

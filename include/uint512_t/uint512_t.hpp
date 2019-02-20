@@ -93,6 +93,11 @@ uint64_t mul12864(uint64_t &hi, uint64_t &lo, uint64_t value) {
 // We do not implement a mul128 becase this op will result a uint128_t as spill,
 // so we put it into class.
 
+uint64_t div12864(uint64_t hi, uint64_t lo, uint64_t value) {
+    
+    return remain;
+}
+
 } // namespace op
 
 template <typename T, typename SubT> class base {

@@ -7,7 +7,13 @@
 ~~2. fine sub and support negative (with + - flag)~~  
 ~~1. refine mulT and mulSubT~~  
 ~~3. impl += -= *= /=~~  
+~~2. impl mul with negative~~  
 
+2. impl div
+    0x03FF / 2 = 0x01FF
+    [03, FF] -> [00, 03, 3F, FF]
+
+3. impl mod with negative
 4. impl mod, mod_inverse, pow, [q, r = (a // b, x % y)]
 5. remove some virtual function
 6. impl wrapper for python and test
