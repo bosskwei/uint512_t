@@ -26,8 +26,10 @@ Note:
 4. uint128 = uint128 * uint128
 
 
-
-
-
 https://blog.quarkslab.com/turning-regular-code-into-atrocities-with-llvm.html
 https://github.com/quarkslab/llvm-passes/tree/master/llvm-passes
+
+https://people.eecs.berkeley.edu/~fateman/282/F%20Wright%20notes/week5.pdf
+https://www.researchgate.net/publication/221588714_Practical_Divide-and-Conquer_Algorithms_for_Polynomial_Arithmetic
+http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.565&rep=rep1&type=pdf
+https://gmplib.org/manual/Divide-and-Conquer-Division.html

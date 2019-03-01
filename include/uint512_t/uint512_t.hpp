@@ -94,8 +94,10 @@ uint64_t mul12864(uint64_t &hi, uint64_t &lo, uint64_t value) {
 // so we put it into class.
 
 uint64_t div12864(uint64_t hi, uint64_t lo, uint64_t value) {
-    
-    return remain;
+    // 0x3FF / 2 = 0x1FF
+    // 0xFFFF / 2 = 0x7FF
+    uint64_t mid = ((hi & 0x00000000FFFFFFFF) << 32) | ((lo & 0xFFFFFFFF00000000) >> 32);
+    return 1;
 }
 
 } // namespace op
