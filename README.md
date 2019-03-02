@@ -33,8 +33,11 @@ https://people.eecs.berkeley.edu/~fateman/282/F%20Wright%20notes/week5.pdf
 https://www.researchgate.net/publication/221588714_Practical_Divide-and-Conquer_Algorithms_for_Polynomial_Arithmetic
 http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.565&rep=rep1&type=pdf
 https://gmplib.org/manual/Divide-and-Conquer-Division.html
+<<<<<<< HEAD
 
 
 https://github.com/alexandrebk/divide-and-conquer-algorithm
 https://gist.github.com/rvandervort/4695740
 https://github.com/gnosis/solidity-arithmetic/blob/master/contracts/Arithmetic.sol
+=======
+>>>>>>> 921c541d8adcd4742019efb2097fa4d70a957eb9
