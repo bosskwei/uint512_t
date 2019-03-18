@@ -680,20 +680,28 @@ void test_bitwise_ops() {
     checkEqual(c, d);
   }
   {
-    uint512_t a(1, 0);
+    uint512_t a(0, 1);
+    for (size_t i = 0; i < 256; i += 1) {
+      a <<= 1;
+    }
+    checkEqual(a, uint512_t(1, 0));
     for (size_t i = 0; i < 256; i += 1) {
       a >>= 1;
     }
+    checkEqual(a, 1);
+    a <<= 256;
+    checkEqual(a, uint512_t(1, 0));
+    a >>= 256;
     checkEqual(a, 1);
   }
   {
     uint512_t a("0x817f59385c9dbe72c141552362eae099475f02266826466ed6c6b31b40b3"
                 "8bd0042b");
-    assert(a.countBits() == 272);
+    assert(a.bitsLength() == 272);
     uint512_t b("53619999245189178119155288389167298372784779505147920607280807"
                 "77303261800839434272941585984361175179693509978956833919818588"
                 "429937180386631149665969494575");
-    assert(b.countBits() == 511);
+    assert(b.bitsLength() == 511);
   }
   std::cout << "uint512::test_bitwise_ops() passed." << std::endl;
 }

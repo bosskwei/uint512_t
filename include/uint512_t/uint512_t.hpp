@@ -240,9 +240,9 @@ public:
     return res;
   }
 
-  virtual unsigned getMaxBitsSubT() const = 0;
+  virtual unsigned getBitsWidthSubT() const = 0;
 
-  unsigned getMaxBits() const { return 2 * this->getMaxBitsSubT(); }
+  unsigned getBitsWidth() const { return 2 * this->getBitsWidthSubT(); }
 
   virtual std::string toStringQuick() const = 0;
 
@@ -261,12 +261,12 @@ public:
     return hex;
   }
 
-  unsigned countBits() {
+  unsigned bitsLength() {
     SubT item;
     unsigned count;
     if (this->hi_ > 0) {
       item = this->hi_;
-      count = this->getMaxBitsSubT();
+      count = this->getBitsWidthSubT();
     } else {
       item = this->lo_;
       count = 0;
@@ -323,13 +323,14 @@ public:
   }
 
   T &operator>>=(unsigned n) {
-    if (n < this->getMaxBitsSubT()) {
-      SubT spill = this->hi_ << (this->getMaxBitsSubT() - n);
+    if (n == 0) {
+    } else if (n < this->getBitsWidthSubT()) {
+      SubT spill = this->hi_ << (this->getBitsWidthSubT() - n);
       this->hi_ >>= n;
       this->lo_ >>= n;
       this->lo_ |= spill;
-    } else if (n < this->getMaxBits()) {
-      this->hi_ >>= (n - this->getMaxBitsSubT());
+    } else if (n < this->getBitsWidth()) {
+      this->hi_ >>= (n - this->getBitsWidthSubT());
       this->lo_ = this->hi_;
       this->hi_ = 0;
     } else {
@@ -340,13 +341,14 @@ public:
   }
 
   T &operator<<=(unsigned n) {
-    if (n < this->getMaxBitsSubT()) {
-      SubT spill = this->lo_ >> (this->getMaxBitsSubT() - n);
+    if (n == 0) {
+    } else if (n < this->getBitsWidthSubT()) {
+      SubT spill = this->lo_ >> (this->getBitsWidthSubT() - n);
       this->lo_ <<= n;
       this->hi_ <<= n;
       this->hi_ |= spill;
-    } else if (n < this->getMaxBits()) {
-      this->lo_ <<= (n - this->getMaxBitsSubT());
+    } else if (n < this->getBitsWidth()) {
+      this->lo_ <<= (n - this->getBitsWidthSubT());
       this->hi_ = this->lo_;
       this->lo_ = 0;
     } else {
@@ -452,7 +454,7 @@ public:
     return MAX_UINT64;
   }
 
-  unsigned getMaxBitsSubT() const final { return 8 * sizeof(uint64_t); }
+  unsigned getBitsWidthSubT() const final { return 8 * sizeof(uint64_t); }
 
   std::string toStringQuick() const final {
     return stringFormat("%016" PRIX64 "%016" PRIX64 "", this->hi_, this->lo_);
@@ -520,7 +522,7 @@ public:
   base_ext() = delete;
   explicit base_ext(SubT hi, SubT lo) : base<T, SubT>(hi, lo) {}
 
-  unsigned getMaxBitsSubT() const final { return this->lo_.getMaxBits(); }
+  unsigned getBitsWidthSubT() const final { return this->lo_.getBitsWidth(); }
 
   std::string toStringQuick() const final {
     return this->hi_.toStringQuick() + this->lo_.toStringQuick();
