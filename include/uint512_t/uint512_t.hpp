@@ -93,13 +93,6 @@ uint64_t mul12864(uint64_t &hi, uint64_t &lo, uint64_t value) {
 // We do not implement a mul128 becase this op will result a uint128_t as spill,
 // so we put it into class.
 
-uint64_t div12864(uint64_t hi, uint64_t lo, uint64_t value) {
-    // 0x3FF / 2 = 0x1FF
-    // 0xFFFF / 2 = 0x7FF
-    uint64_t mid = ((hi & 0x00000000FFFFFFFF) << 32) | ((lo & 0xFFFFFFFF00000000) >> 32);
-    return 1;
-}
-
 } // namespace op
 
 template <typename T, typename SubT> class base {
@@ -231,7 +224,7 @@ public:
     }
   }
 
-  virtual SubT getMaxSubT() = 0;
+  virtual SubT getMaxSubT() const = 0;
 
   void asComplement() {
     // complement(0) -> 0
@@ -246,6 +239,10 @@ public:
     res.asComplement();
     return res;
   }
+
+  virtual unsigned getMaxBitsSubT() const = 0;
+
+  unsigned getMaxBits() const { return 2 * this->getMaxBitsSubT(); }
 
   virtual std::string toStringQuick() const = 0;
 
@@ -262,6 +259,23 @@ public:
     }
     hex = "0x" + hex.substr(fnz, hex.size() - fnz);
     return hex;
+  }
+
+  unsigned countBits() {
+    SubT item;
+    unsigned count;
+    if (this->hi_ > 0) {
+      item = this->hi_;
+      count = this->getMaxBitsSubT();
+    } else {
+      item = this->lo_;
+      count = 0;
+    }
+    while (item > 0) {
+      count += 1;
+      item >>= 1;
+    }
+    return count;
   }
 
   virtual void addWithCarry(const T &other, uint64_t &carry) = 0;
@@ -308,6 +322,40 @@ public:
     return *static_cast<T *>(this);
   }
 
+  T &operator>>=(unsigned n) {
+    if (n < this->getMaxBitsSubT()) {
+      SubT spill = this->hi_ << (this->getMaxBitsSubT() - n);
+      this->hi_ >>= n;
+      this->lo_ >>= n;
+      this->lo_ |= spill;
+    } else if (n < this->getMaxBits()) {
+      this->hi_ >>= (n - this->getMaxBitsSubT());
+      this->lo_ = this->hi_;
+      this->hi_ = 0;
+    } else {
+      this->hi_ = 0;
+      this->lo_ = 0;
+    }
+    return *static_cast<T *>(this);
+  }
+
+  T &operator<<=(unsigned n) {
+    if (n < this->getMaxBitsSubT()) {
+      SubT spill = this->lo_ >> (this->getMaxBitsSubT() - n);
+      this->lo_ <<= n;
+      this->hi_ <<= n;
+      this->hi_ |= spill;
+    } else if (n < this->getMaxBits()) {
+      this->lo_ <<= (n - this->getMaxBitsSubT());
+      this->hi_ = this->lo_;
+      this->lo_ = 0;
+    } else {
+      this->hi_ = 0;
+      this->lo_ = 0;
+    }
+    return *static_cast<T *>(this);
+  }
+
   friend bool operator==(const T &left, const T &right) {
     return left.hi_ == right.hi_ and left.lo_ == right.lo_;
   }
@@ -317,13 +365,8 @@ public:
   }
 
   friend bool operator>(const T &left, const T &right) {
-    if (left.hi_ > right.hi_) {
-      return true;
-    } else if (left.hi_ < right.hi_) {
-      return false;
-    } else {
-      return left.lo_ > right.lo_;
-    }
+    return (left.hi_ == right.hi_) ? (left.lo_ > right.lo_)
+                                   : (left.hi_ > right.hi_);
   }
 
   friend bool operator>=(const T &left, const T &right) {
@@ -331,13 +374,8 @@ public:
   }
 
   friend bool operator<(const T &left, const T &right) {
-    if (left.hi_ > right.hi_) {
-      return false;
-    } else if (left.hi_ < right.hi_) {
-      return true;
-    } else {
-      return left.lo_ < right.lo_;
-    }
+    return (left.hi_ == right.hi_) ? (left.lo_ < right.lo_)
+                                   : (left.hi_ < right.hi_);
   }
 
   friend bool operator<=(const T &left, const T &right) {
@@ -380,6 +418,18 @@ public:
     return res;
   }
 
+  friend T operator>>(const T &value, unsigned n) {
+    T res = value;
+    res >>= n;
+    return res;
+  }
+
+  friend T operator<<(const T &value, unsigned n) {
+    T res = value;
+    res <<= n;
+    return res;
+  }
+
   friend std::ostream &operator<<(std::ostream &os, const T &object) {
     return os << object.toString();
   }
@@ -397,12 +447,14 @@ public:
     this->parseString(value, BYTES_UINT128, BYTES_UINT64);
   }
 
-  uint64_t getMaxSubT() final {
+  uint64_t getMaxSubT() const final {
     static uint64_t MAX_UINT64 = 0xFFFFFFFFFFFFFFFF;
     return MAX_UINT64;
   }
 
-  std::string toStringQuick() const override {
+  unsigned getMaxBitsSubT() const final { return 8 * sizeof(uint64_t); }
+
+  std::string toStringQuick() const final {
     return stringFormat("%016" PRIX64 "%016" PRIX64 "", this->hi_, this->lo_);
   }
 
@@ -426,12 +478,49 @@ public:
     f += carry;
     return uint128_t(f, c);
   }
+
+  /*
+    std::pair<uint128_t, uint128_t> divmod(const uint128_t &x,
+                                           const uint128_t &y) {
+      if (y == 0)
+        throw std::domain_error("Division by 0");
+      else if (y == 1)
+        return std::pair<uint128_t, uint128_t>(x, 0);
+      else if (x == y)
+        return std::pair<uint128_t, uint128_t>(1, 0);
+      else if ((x == 0) || (x < y))
+        return std::pair<uint128_t, uint128_t>(0, x);
+
+      std::pair<uint256_t, uint256_t> result(0, x);
+      uint256_t delta = uint256_t(x.bits() - y.bits());
+      uint256_t copyd = y << delta;
+      uint256_t adder = 1 << delta;
+
+      if (copyd > result.second) {
+        copyd >>= 1;
+        adder >>= 1;
+      }
+
+      while (result.second >= y) {
+        if (result.second >= copyd) {
+          result.second -= copyd;
+          result.first |= adder;
+        }
+        copyd >>= 1;
+        adder >>= 1;
+      }
+
+      return result;
+    }
+  */
 };
 
 template <typename T, typename SubT> class base_ext : public base<T, SubT> {
 public:
   base_ext() = delete;
   explicit base_ext(SubT hi, SubT lo) : base<T, SubT>(hi, lo) {}
+
+  unsigned getMaxBitsSubT() const final { return this->lo_.getMaxBits(); }
 
   std::string toStringQuick() const final {
     return this->hi_.toStringQuick() + this->lo_.toStringQuick();
@@ -486,7 +575,7 @@ public:
     this->parseString(value, BYTES_UINT256, BYTES_UINT128);
   }
 
-  uint128_t getMaxSubT() final {
+  uint128_t getMaxSubT() const final {
     static uint128_t MAX_UINT128 =
         uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF);
     return MAX_UINT128;
@@ -503,7 +592,7 @@ public:
     this->parseString(value, BYTES_UINT512, BYTES_UINT256);
   }
 
-  uint256_t getMaxSubT() final {
+  uint256_t getMaxSubT() const final {
     const uint256_t MAX_UINT256 =
         uint256_t(uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF),
                   uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF));
@@ -521,7 +610,7 @@ public:
     this->parseString(value, BYTES_UINT1024, BYTES_UINT512);
   }
 
-  uint512_t getMaxSubT() final {
+  uint512_t getMaxSubT() const final {
     const uint512_t MAX_UINT512 =
         uint512_t(uint256_t(uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF),
                             uint128_t(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF)),

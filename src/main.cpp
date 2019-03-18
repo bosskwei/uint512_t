@@ -679,6 +679,22 @@ void test_bitwise_ops() {
         "c9a61dcd99e1501101bb6c4728855c4b19d09afd35e13bc20ff85b8fbac");
     checkEqual(c, d);
   }
+  {
+    uint512_t a(1, 0);
+    for (size_t i = 0; i < 256; i += 1) {
+      a >>= 1;
+    }
+    checkEqual(a, 1);
+  }
+  {
+    uint512_t a("0x817f59385c9dbe72c141552362eae099475f02266826466ed6c6b31b40b3"
+                "8bd0042b");
+    assert(a.countBits() == 272);
+    uint512_t b("53619999245189178119155288389167298372784779505147920607280807"
+                "77303261800839434272941585984361175179693509978956833919818588"
+                "429937180386631149665969494575");
+    assert(b.countBits() == 511);
+  }
   std::cout << "uint512::test_bitwise_ops() passed." << std::endl;
 }
 
@@ -719,7 +735,9 @@ void test_mul_and_div() {
     uint512_t a("-0xecf9c3660969a1b8564eddd8d1dc50b3344c3207f0");
     uint512_t b("-0xf1f2f3f4f5f6");
     uint512_t c = a * b;
-    checkEqual(c, uint512_t("0xdff806e19b882f4c11c1164cc6037632d36bb383fdcf457a6c50a0"));
+    checkEqual(
+        c,
+        uint512_t("0xdff806e19b882f4c11c1164cc6037632d36bb383fdcf457a6c50a0"));
   }
   std::cout << "uint512::test_mul_and_div() passed." << std::endl;
 }
@@ -801,25 +819,70 @@ void test_performance() {
 }
 } // namespace test_uint512
 
-float func (float a)
-{
-        for (int i = 0; i < 6; i++)
-        {
-                a = -a;
-                for (int j = 0; j < 4; j++)
-                {
-                        a = -a;
-                        if (i == 1)
-                                return a;
-                }
-                if (i == 4)
-                        return 1.0;
-        }
-        return 1.0;
+uint32_t fp16_ieee_to_fp32_bits(uint16_t h) {
+  const uint32_t w = (uint32_t)h << 16;
+  const uint32_t sign = w & UINT32_C(0x80000000);
+  const uint32_t nonsign = w & UINT32_C(0x7FFFFFFF);
+  uint32_t renorm_shift = __builtin_clz(nonsign);
+  renorm_shift = renorm_shift > 5 ? renorm_shift - 5 : 0;
+  const int32_t inf_nan_mask =
+      ((int32_t)(nonsign + 0x04000000) >> 8) & INT32_C(0x7F800000);
+  const int32_t zero_mask = (int32_t)(nonsign - 1) >> 31;
+  return sign |
+         ((((nonsign << renorm_shift >> 3) + ((0x70 - renorm_shift) << 23)) |
+           inf_nan_mask) &
+          ~zero_mask);
+}
+
+static inline float fp32_from_bits(uint32_t w) {
+  union {
+    uint32_t as_bits;
+    float as_value;
+  } fp32 = {w};
+  return fp32.as_value;
+}
+
+static inline uint32_t fp32_to_bits(float f) {
+  union {
+    float as_value;
+    uint32_t as_bits;
+  } fp32 = {f};
+  return fp32.as_bits;
+}
+
+static inline uint16_t fp16_ieee_from_fp32_value(float f) {
+  const float scale_to_inf = fp32_from_bits(UINT32_C(0x77800000));
+  const float scale_to_zero = fp32_from_bits(UINT32_C(0x08800000));
+  float base = (fabsf(f) * scale_to_inf) * scale_to_zero;
+
+  const uint32_t w = fp32_to_bits(f);
+  const uint32_t shl1_w = w + w;
+  const uint32_t sign = w & UINT32_C(0x80000000);
+  uint32_t bias = shl1_w & UINT32_C(0xFF000000);
+  if (bias < UINT32_C(0x71000000)) {
+    bias = UINT32_C(0x71000000);
+  }
+
+  base = fp32_from_bits((bias >> 1) + UINT32_C(0x07800000)) + base;
+  const uint32_t bits = fp32_to_bits(base);
+  const uint32_t exp_bits = (bits >> 13) & UINT32_C(0x00007C00);
+  const uint32_t mantissa_bits = bits & UINT32_C(0x00000FFF);
+  const uint32_t nonsign = exp_bits + mantissa_bits;
+  return (sign >> 16) |
+         (shl1_w > UINT32_C(0xFF000000) ? UINT16_C(0x7E00) : nonsign);
+}
+
+int main_2() {
+  uint16_t uint_fp16 = 0x0070;
+  uint32_t uint_fp32 = fp16_ieee_to_fp32_bits(uint_fp16);
+  uint16_t uint_fp16_dst = fp16_ieee_from_fp32_value(fp32_from_bits(uint_fp32));
+  std::cout << "input: " << std::hex << uint_fp16 << std::endl;
+  std::cout << "output: " << std::hex << uint_fp16_dst << std::endl;
+  std::cout << "error: " << uint_fp16_dst - uint_fp16 << std::endl;
+  return 0;
 }
 
 int main() {
-  std::cout << func(-0.5) << std::endl;
   //
   test_op::test_add64();
   test_op::test_add12864();
