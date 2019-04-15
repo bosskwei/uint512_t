@@ -63,4 +63,5 @@ for i = n − 1 .. 0 do  -- for example 31..0 for 32 bits
     R := 2 * R + D
   end if
 end
-
+ 
+-- Note: N=Numerator, D=Denominator, n=#bits, R=Partial remainder, q(i)=bit #i of quotient.

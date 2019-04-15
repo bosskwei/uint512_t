@@ -261,7 +261,7 @@ public:
     return hex;
   }
 
-  unsigned bitsLength() {
+  unsigned bitsLength() const {
     SubT item;
     unsigned count;
     if (this->hi_ > 0) {
@@ -276,6 +276,44 @@ public:
       item >>= 1;
     }
     return count;
+  }
+
+  std::pair<T, T> divmod(const T &x, const T &y) {
+    if (y == 0) {
+      throw std::domain_error("divide by zero");
+    } else if (x < y) {
+      return std::pair<T, T>(0, x);
+    } else if (x == 0) {
+      return std::pair<T, T>(0, x);
+    } else if (y == 1) {
+      return std::pair<T, T>(x, 0);
+    } else if (x == y) {
+      return std::pair<T, T>(1, 0);
+    }
+
+    auto result = std::pair<T, T>(0, x);
+    unsigned delta = x.bitsLength() - y.bitsLength();
+    std::cout << "delta: " << delta << std::endl;
+    T copyd = y << delta;
+    T adder = T("0x1") << delta;
+    std::cout << "copyd: " << copyd << std::endl;
+    std::cout << "adder: " << adder << std::endl;
+    if (copyd > result.second) {
+      copyd >>= 1;
+      adder >>= 1;
+    }
+    while (result.second >= y) {
+      if (result.second >= copyd) {
+        std::cout << " - " << result.second << std::endl;
+        std::cout << copyd << std::endl;
+        result.second -= copyd;
+        std::cout << " + " << result.second << std::endl;
+        result.first |= adder;
+      }
+      copyd >>= 1;
+      adder >>= 1;
+    }
+    return result;
   }
 
   virtual void addWithCarry(const T &other, uint64_t &carry) = 0;
@@ -301,6 +339,10 @@ public:
 
   T &operator*=(const T &other) {
     this->mulTWithSpill(other);
+    return *static_cast<T *>(this);
+  }
+
+  T &operator/=(const T &other) {
     return *static_cast<T *>(this);
   }
 
@@ -480,41 +522,6 @@ public:
     f += carry;
     return uint128_t(f, c);
   }
-
-  /*
-    std::pair<uint128_t, uint128_t> divmod(const uint128_t &x,
-                                           const uint128_t &y) {
-      if (y == 0)
-        throw std::domain_error("Division by 0");
-      else if (y == 1)
-        return std::pair<uint128_t, uint128_t>(x, 0);
-      else if (x == y)
-        return std::pair<uint128_t, uint128_t>(1, 0);
-      else if ((x == 0) || (x < y))
-        return std::pair<uint128_t, uint128_t>(0, x);
-
-      std::pair<uint256_t, uint256_t> result(0, x);
-      uint256_t delta = uint256_t(x.bits() - y.bits());
-      uint256_t copyd = y << delta;
-      uint256_t adder = 1 << delta;
-
-      if (copyd > result.second) {
-        copyd >>= 1;
-        adder >>= 1;
-      }
-
-      while (result.second >= y) {
-        if (result.second >= copyd) {
-          result.second -= copyd;
-          result.first |= adder;
-        }
-        copyd >>= 1;
-        adder >>= 1;
-      }
-
-      return result;
-    }
-  */
 };
 
 template <typename T, typename SubT> class base_ext : public base<T, SubT> {
