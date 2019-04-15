@@ -752,7 +752,6 @@ void test_mul_and_div() {
                 "632d36bb383fdcf457a6c50a0");
     uint512_t b("0xf1f2f3f4f5f6");
     std::pair<uint512_t, uint512_t> qr = a.divmod(a, b);
-    std::cout << qr.first << std::endl;
     checkEqual(qr.first, uint512_t("0xecf9c3660969a1b8564ede5fd51f6da4dbacd15de"
                                    "47a5da92d59e5c3252bfbcb61239fa27"));
     checkEqual(qr.second, uint512_t("0xa14b08229c26"));
