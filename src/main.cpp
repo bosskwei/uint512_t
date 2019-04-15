@@ -748,6 +748,7 @@ void test_mul_and_div() {
         uint512_t("0xdff806e19b882f4c11c1164cc6037632d36bb383fdcf457a6c50a0"));
   }
   {
+<<<<<<< HEAD
     // bug fix
     uint512_t a("0xdff806e19b882f4c11c116cc6037632d36bb383fdcf457a6c50a04cc6037632d36bb383fdcf457a6c50a0");
     uint512_t b("0x78f979fa7afb0000000000000000000000000000000000000000000000000000000000000000000000000");
@@ -757,6 +758,8 @@ void test_mul_and_div() {
 
 /*
     // test div
+=======
+>>>>>>> bug in
     uint512_t a("0xdff806e19b882f4c11c116cc6037632d36bb383fdcf457a6c50a04cc6037"
                 "632d36bb383fdcf457a6c50a0");
     uint512_t b("0xf1f2f3f4f5f6");
@@ -765,7 +768,10 @@ void test_mul_and_div() {
     checkEqual(qr.first, uint512_t("0xecf9c3660969a1b8564ede5fd51f6da4dbacd15de"
                                    "47a5da92d59e5c3252bfbcb61239fa27"));
     checkEqual(qr.second, uint512_t("0xa14b08229c26"));
+<<<<<<< HEAD
     */
+=======
+>>>>>>> bug in
   }
   std::cout << "uint512::test_mul_and_div() passed." << std::endl;
 }
@@ -773,8 +779,9 @@ void test_mul_and_div() {
 void test_performance() {
   {
     auto before = std::chrono::system_clock::now();
-    for (uint64_t i = 0; i < 0xFFFFF; i += 1) {
-      ;
+    uint64_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a += 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -782,8 +789,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint128_t i = 0; i < 0xFFFFF; i += 1) {
-      ;
+    uint128_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a += 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -791,8 +799,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint256_t i = 0; i < 0xFFFFF; i += 1) {
-      ;
+    uint256_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a += 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -800,8 +809,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint512_t i = 0; i < 0xFFFFF; i += 1) {
-      ;
+    uint512_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a += 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -809,8 +819,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint64_t i = 0xFFFFF; i > 0; i -= 1) {
-      ;
+    uint64_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a -= 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -818,8 +829,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint128_t i = 0xFFFFF; i > 0; i -= 1) {
-      ;
+    uint128_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a -= 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -827,8 +839,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint256_t i = 0xFFFFF; i > 0; i -= 1) {
-      ;
+    uint256_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a -= 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -836,8 +849,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint512_t i = 0xFFFFF; i > 0; i -= 1) {
-      ;
+    uint512_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a -= 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;

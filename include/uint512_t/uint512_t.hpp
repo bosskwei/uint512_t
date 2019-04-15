@@ -227,11 +227,16 @@ public:
   virtual SubT getMaxSubT() const = 0;
 
   void asComplement() {
+    this->hi_ = ~this->hi_;
+    this->lo_ = ~this->lo_;
+    this->operator+=(1);
+    /*
     // complement(0) -> 0
     if (this->hi_ > 0 or this->lo_ > 0) {
       this->hi_ = getMaxSubT() - this->hi_;
       this->lo_ = getMaxSubT() - this->lo_ + 1;
     }
+    */
   }
 
   T toComplement() const {
@@ -293,21 +298,30 @@ public:
 
     auto result = std::pair<T, T>(0, x);
     unsigned delta = x.bitsLength() - y.bitsLength();
+<<<<<<< HEAD
     std::cout << "delta: " << delta << std::endl;
     T copyd = y << delta;
     T adder = T("0x1") << delta;
     std::cout << "copyd: " << copyd << std::endl;
     std::cout << "adder: " << adder << std::endl;
+=======
+    T copyd = y << delta;
+    T adder = T("0x1") << delta;
+>>>>>>> bug in
     if (copyd > result.second) {
       copyd >>= 1;
       adder >>= 1;
     }
     while (result.second >= y) {
       if (result.second >= copyd) {
+<<<<<<< HEAD
         std::cout << " - " << result.second << std::endl;
         std::cout << copyd << std::endl;
         result.second -= copyd;
         std::cout << " + " << result.second << std::endl;
+=======
+        result.second -= copyd;
+>>>>>>> bug in
         result.first |= adder;
       }
       copyd >>= 1;
@@ -323,6 +337,10 @@ public:
     this->hi_ = other.hi_;
     this->lo_ = other.lo_;
     return *this;
+  }
+
+  T operator~() const {
+    return T(~this->hi_, ~this->lo_);
   }
 
   T &operator+=(const T &other) {
