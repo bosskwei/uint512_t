@@ -747,14 +747,25 @@ void test_mul_and_div() {
         c,
         uint512_t("0xdff806e19b882f4c11c1164cc6037632d36bb383fdcf457a6c50a0"));
   }
+  {
+    uint512_t a("0xdff806e19b882f4c11c116cc6037632d36bb383fdcf457a6c50a04cc6037"
+                "632d36bb383fdcf457a6c50a0");
+    uint512_t b("0xf1f2f3f4f5f6");
+    std::pair<uint512_t, uint512_t> qr = a.divmod(a, b);
+    std::cout << qr.first << std::endl;
+    checkEqual(qr.first, uint512_t("0xecf9c3660969a1b8564ede5fd51f6da4dbacd15de"
+                                   "47a5da92d59e5c3252bfbcb61239fa27"));
+    checkEqual(qr.second, uint512_t("0xa14b08229c26"));
+  }
   std::cout << "uint512::test_mul_and_div() passed." << std::endl;
 }
 
 void test_performance() {
   {
     auto before = std::chrono::system_clock::now();
-    for (uint64_t i = 0; i < 0xFFFFF; i += 1) {
-      ;
+    uint64_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a += 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -762,8 +773,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint128_t i = 0; i < 0xFFFFF; i += 1) {
-      ;
+    uint128_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a += 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -771,8 +783,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint256_t i = 0; i < 0xFFFFF; i += 1) {
-      ;
+    uint256_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a += 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -780,8 +793,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint512_t i = 0; i < 0xFFFFF; i += 1) {
-      ;
+    uint512_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a += 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -789,8 +803,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint64_t i = 0xFFFFF; i > 0; i -= 1) {
-      ;
+    uint64_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a -= 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -798,8 +813,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint128_t i = 0xFFFFF; i > 0; i -= 1) {
-      ;
+    uint128_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a -= 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -807,8 +823,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint256_t i = 0xFFFFF; i > 0; i -= 1) {
-      ;
+    uint256_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a -= 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -816,8 +833,9 @@ void test_performance() {
   }
   {
     auto before = std::chrono::system_clock::now();
-    for (uint512_t i = 0xFFFFF; i > 0; i -= 1) {
-      ;
+    uint512_t a = 0;
+    for (uint32_t i = 0; i < 0xFFFFF; i += 1) {
+      a -= 1;
     }
     auto after = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = after - before;
@@ -878,6 +896,37 @@ static inline uint16_t fp16_ieee_from_fp32_value(float f) {
   const uint32_t nonsign = exp_bits + mantissa_bits;
   return (sign >> 16) |
          (shl1_w > UINT32_C(0xFF000000) ? UINT16_C(0x7E00) : nonsign);
+}
+
+uint16_t fp32_to_fp16_rtz(uint32_t fp32) {
+  uint16_t fp16_inf = 0x7c00;
+  uint16_t fp16_nan = 0x7fff;
+  if (std::isnan(fp32_from_bits(fp32))) {
+    std::cout << "isnan" << std::endl;
+    return fp16_nan;
+  }
+  uint32_t fp16_mant = (((fp32 & 0x0007FFFFF) | 0x0800000) >> 13);
+  uint32_t fp16_exp = (int32_t(fp32 & 0x7F800000) >> 23) - 112;
+  uint32_t fp16_sign = (fp32 & 0x80000000) >> 16;
+  std::cout << "fp16_mant: " << std::hex << fp16_mant << std::endl;
+  std::cout << "fp16_exp: " << std::hex << fp16_exp << std::endl;
+  if (std::isinf(fp32_from_bits(fp32))) {
+    return (fp16_inf | fp16_sign);
+  }
+  if ((signed)fp16_exp >= 0x01F) {
+    return (0x7bffU | fp16_sign);
+  }
+  // denormal data
+  if ((int32_t)fp16_exp <= 0x0) {
+    return uint16_t(fp16_sign);
+  }
+  return uint16_t(fp16_sign | fp16_exp << 10 | (fp16_mant & 0x03FF));
+}
+
+int main_1() {
+  uint16_t uint_fp16_dst = fp32_to_fp16_rtz(-8388608);
+  std::cout << std::hex << uint_fp16_dst << std::endl;
+  return 0;
 }
 
 int main_2() {
